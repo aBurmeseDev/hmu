@@ -1,9 +1,25 @@
 const socket = io('/')
+const videoGrid = document.getElementById('video-grid')
 
 // create new peer
 const myPeer = new Peer(undefined, {
     host: '/',
     port: '3001'
+})
+
+const myVideo = document.createElement('video')
+// mute my own audio
+myVideo.muted =  true
+
+navigator.mediaDevices.getUserMedia({
+    video: true,
+    audio: true
+}).then(stream => {
+    addVideoStream(myVideo, stream)
+
+    socket.on('user-connected', userId => {
+        connectToNewUser(userId, stream)
+    })
 })
 
 // as soon as connect to peer server and get an id, run this
@@ -13,6 +29,22 @@ myPeer.on('open', id =>{
 })
 
 
-socket.on('user-connected', userId => {
-    console.log('User connected: ' + userId)
-})
+
+function addVideoStream(video, stream) {
+    video.srcObject = stream
+    video.addEventListener('loadedmetadata', () => {
+        video.play()
+    })
+    videoGrid.append(video)
+}
+function connectToNewUser(userId, stream) {
+    const call = myPeer.call(userId, stream)
+    const video = document.createElement('video')
+    call.on('stream', userVideoStream => {
+        addVideoStream(video, userVideoStream)
+    })
+    // remove the video when someone leaves
+    call.on('close', () => {
+        video.remove()
+    })
+}
