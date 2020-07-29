@@ -17,9 +17,14 @@ app.get('/:room', (req, res) => {
 })
 
 io.on('connection', socket => {
+    // new user join the room
     socket.on('join-room', (roomId, userId) => {
         socket.join(roomId)
         socket.to(roomId).broadcast.emit('user-connected', userId)
+    // remove video when user leaves
+        socket.on('disconnect', () => {
+            socket.to(roomId).broadcast.emit('user-disconnected', userId)
+        })
     })
 })
 server.listen(3000)

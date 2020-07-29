@@ -10,6 +10,7 @@ const myPeer = new Peer(undefined, {
 const myVideo = document.createElement('video')
 // mute my own audio
 myVideo.muted =  true
+const peers = {}
 
 navigator.mediaDevices.getUserMedia({
     video: true,
@@ -30,6 +31,13 @@ navigator.mediaDevices.getUserMedia({
     socket.on('user-connected', userId => {
         connectToNewUser(userId, stream)
     })
+})
+
+// close the video when user leaves
+socket.on('user-disconnected', userId => {
+    if (peers[userId]) { 
+        peers[userId].close()
+    }
 })
 
 // as soon as connect to peer server and get an id, run this
@@ -59,4 +67,6 @@ function connectToNewUser(userId, stream) {
     call.on('close', () => {
         video.remove()
     })
+    // link user id to current call
+    peers[userId] = call
 }
